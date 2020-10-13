@@ -1,6 +1,10 @@
+//package java;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+//import java.util.Scanner;
 
 public class Router {
 //    TODO
@@ -13,45 +17,44 @@ public class Router {
 // ------------------------------------------------------------------
 
 //    PROGRESS
-//    connects the broker and receives messages and sends them back
-    public static void main(String[] args) throws IOException {
-        System.out.println("Server started");
-        ServerSocket broker = new ServerSocket(5000);
-        System.out.println("Server waiting for request");
-        Socket s = broker.accept();
-        System.out.println("Broker Connected");
+//    connects the broker and market and receives messages and sends them back
+//    Done!!
+    Socket s;
+    ArrayList<ServerConnection> connections = new ArrayList<>();
+    public static void main(String[] args) {
+        new Router();
+    }
+    public Router(){
+        while(true) {
+            System.out.println("Server waiting for request\ntype quit to close Router");
 
+            try (ServerSocket broker = new ServerSocket(5000)) {
+                s = broker.accept();
+                System.out.println("Broker accepted");
+                ServerConnection sc = new ServerConnection(s,this);
+                sc.start();
+                connections.add(sc);
+            } catch (IOException e) {
+                System.out.println("Broker connection to Router error: " + e.getMessage());
+            }
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        String str = br.readLine();//Reading data from client
+            try (ServerSocket market = new ServerSocket(5001)) {
+                s = market.accept();
+                System.out.println("Market Connected");
+                ServerConnection sc = new ServerConnection(s,this);
+                sc.start();
+                connections.add(sc);
+            } catch (IOException e) {
+                System.out.println("Broker connection to Router error: " + e.getMessage());
+            }
+//            if (q.toLowerCase().equals("quit"))
+//                break;
+        }
+//        broker.close();
+//        Market.close();
+//        out.close();
+//        in.close();
+//        s.close();
 
-        System.out.println("Client data: "+str);
-
-        String str2 = str.substring(0,3);
-
-        OutputStreamWriter os = new OutputStreamWriter(s.getOutputStream());
-        PrintWriter out = new PrintWriter(os);
-        out.println(str2);
-        out.flush();//Sending data to client
-
-
-
-        ServerSocket market = new ServerSocket(5001);
-        System.out.println("Server waiting for request");
-        s = market.accept();
-        System.out.println("Market Connected");
-
-
-        br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        str = br.readLine();//Reading data from client
-
-        System.out.println("Client data: "+str);
-
-        str2 = str.substring(0,3);
-
-        os = new OutputStreamWriter(s.getOutputStream());
-        out = new PrintWriter(os);
-        out.println(str2);
-        out.flush();//Sending data to client
     }
 }
