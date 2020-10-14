@@ -22,16 +22,16 @@ public class ServerConnection extends Thread{
         out.flush();
     }
 
-    public void SendStringToAll(String request){
+    public void SendStringToAll(String msg){
             for(int i = 0; i < router.connections.size(); i++)
         {
             ServerConnection sc = router.connections.get(i);
-            sc.SendStringToBroker(request);
+            sc.SendStringToBroker(msg);//loops through array of connections and sends the string to them all
         }
     }
 
     @lombok.SneakyThrows
-    public void run(){
+    public void run(){//overwriting the run() function in thread
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         //Reading data from broker
         System.out.println("Client data: " + str);

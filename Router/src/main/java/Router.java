@@ -31,8 +31,8 @@ public class Router {
             try (ServerSocket broker = new ServerSocket(5000)) {
                 s = broker.accept();
                 System.out.println("Broker accepted");
-                ServerConnection sc = new ServerConnection(s,this);
-                sc.start();
+                ServerConnection sc = new ServerConnection(s,this);//makes using multiple brokers and markets threads at the same time
+                sc.start();//starting thread
                 connections.add(sc);
             } catch (IOException e) {
                 System.out.println("Broker connection to Router error: " + e.getMessage());
