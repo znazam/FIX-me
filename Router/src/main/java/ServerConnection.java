@@ -17,7 +17,13 @@ public class ServerConnection extends Thread{
         this.router = router;
     }
 
+    public void SendIdToBroker(int ID){
+        System.out.println(ID);
+        out.println(ID);
+        out.flush();
+    }
     public void SendStringToBroker(String reply){
+        System.out.println(reply);
         out.println(reply);
         out.flush();
     }
@@ -27,6 +33,7 @@ public class ServerConnection extends Thread{
         {
             ServerConnection sc = router.connections.get(i);
             sc.SendStringToBroker(msg);//loops through array of connections and sends the string to them all
+            sc.SendIdToBroker(i);
         }
     }
 
@@ -34,7 +41,6 @@ public class ServerConnection extends Thread{
     public void run(){//overwriting the run() function in thread
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         //Reading data from broker
-        System.out.println("Client data: " + str);
 
 //                String str2 = str.substring(0, 3);
 

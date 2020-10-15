@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Set;
 //import java.util.Scanner;
 
 public class Router {
@@ -32,7 +33,11 @@ public class Router {
                 s = broker.accept();
                 System.out.println("Broker accepted");
                 ServerConnection sc = new ServerConnection(s,this);//makes using multiple brokers and markets threads at the same time
+//                sc.setName(i);
+                int id = (int) sc.getId();
                 sc.start();//starting thread
+//                Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+                System.out.println(id);
                 connections.add(sc);
             } catch (IOException e) {
                 System.out.println("Broker connection to Router error: " + e.getMessage());

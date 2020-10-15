@@ -9,6 +9,7 @@ public class BrokerConnection extends Thread{
     OutputStreamWriter os;
     PrintWriter out;
     Socket s;
+    boolean idAssigned = false;
     public BrokerConnection(Socket socket, Broker broker) throws IOException {
         s = socket;
     }
@@ -23,12 +24,20 @@ public class BrokerConnection extends Thread{
         try {
             os = new OutputStreamWriter(s.getOutputStream());
             out = new PrintWriter(os);
+            int ID = 0;
+            if (idAssigned = false)
+            {
+                in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+//              id assined by router
+                ID = in.read();
+                idAssigned = true;
+            }
             while (true) {
                 try {
                     in = new BufferedReader(new InputStreamReader(s.getInputStream()));
 //            data given by the Router
                     String ser = in.readLine();
-                    System.out.println("Data from Router " + ser);
+                    System.out.println("Data from Router"+ID+" :" + ser);
                 }
                 catch (IOException e){
                     e.printStackTrace();
