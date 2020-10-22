@@ -31,36 +31,56 @@ public class Market{
         }
         public void listenForInput() throws IOException {
             Scanner scan = new Scanner(System.in);
-            String ID = "";
+            String mID = "";
+            String bID = "";
             in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            idAssigned = false;
             while (true) {
             if (!idAssigned)
             {
 //              id assined by route
-                ID = in.readLine();
+                bID = in.readLine();
+                mID = in.readLine();
+                System.out.println(mID);
+                System.out.println(bID);
                 idAssigned = true;
             }
-            String id = in.readLine();
-            int begin = id.indexOf("49="+1);
-            int end = id.indexOf("49="+6);
+//            out.println("Market sent first");
+//            out.flush();
+            String id = null;
+//            while(id == null){
+                id = in.readLine();
+            if(id.equals("quit")){
+                out.println(id);//sending data to server
+                out.flush();
+                in.close();
+                os.close();
+                out.close();
+                s.close();
+                System.exit(1);
+            }
+
+            int begin = id.indexOf("49=")+3;
+            int end = begin + 6;
             String tid = id.substring(begin, end);
             int bid = Integer.parseInt(tid);
-            begin = id.indexOf("56="+1);
-            end = id.indexOf("56="+6);
+            begin = id.indexOf("56=")+3;
+            end = begin+6;
             tid = id.substring(begin, end);
             int mid = Integer.parseInt(tid);
-            if (mid == Integer.parseInt(ID)) {
+            System.out.println(mid+"   "+mID);
+            if (mid == Integer.parseInt(mID)) {
 //                while (true) {
 //                    str = scan.nextLine();
                     in = new BufferedReader(new InputStreamReader(s.getInputStream()));
 //                    if (str.toLowerCase().equals("quit"))
 //                        break;
-                    out.println("49="+bid+"56="+ID);//sending data to server
+                    out.println(id);//sending data to server
                     out.flush();
 
 //            data given by the Router
-                    String ser = in.readLine();
-                    System.out.println("Data from Router " + ser);
+//                    String ser = in.readLine();
+                    System.out.println("Data from Router " + id);
                     System.out.println(" Market ID in Market is: "+mid);
                 }
             }

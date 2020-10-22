@@ -6,21 +6,20 @@ import java.net.Socket;
 public class ServerConnection extends Thread{
     Socket socket;
     Router router;
-    BufferedReader in;
     OutputStreamWriter os;
     PrintWriter out;
-    String str;
     String tid;
     int mid;
     int bid;
-    String run;
     boolean idSent = false;
-    boolean introductions = false;
-    public ServerConnection(Socket socket, Router router, String run){
+    int i;
+    boolean close = false;
+    boolean check;
+
+    public ServerConnection(Socket socket, Router router){
         super("ServerConnectionThread");
         this.socket = socket;
         this.router = router;
-        this.run = run;
     }
 
     public void SendID(int brID, int mrID){
@@ -37,98 +36,122 @@ public class ServerConnection extends Thread{
         out.flush();
     }
 
-    public void SendStringToAll() throws IOException {
-            for(int i = 0; i < router.BrokerList.size(); i++)
-            {//issue is here at the moment
-            if (router.pair.containsValue(i)) {
-                System.out.println("1");
-                ServerConnection mr = router.MarketList.get(i);
-                System.out.println("2");
-                ServerConnection br = router.BrokerList.get(i);
-                System.out.println("3");
-                String msg;
-                if (!idSent){
-                    System.out.println("4");
-                    br.SendID(router.brokerid, router.marketid);
-                    System.out.println("5");
-                    mr.SendID(router.brokerid, router.marketid);
-                    System.out.println("6");
-                    System.out.println("7");
-                    msg = in.readLine();
-                    System.out.println("8");
-                    mr.SendString(msg);//loops through array of connections and sends the string to them all
-                    System.out.println("9");
-                    msg = in.readLine();
-                    System.out.println("10");
+    public static String readMsg(Socket s, boolean close){
+        String str = null;
+        System.out.println("Waiting for data from broker");
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            str = br.readLine();
+            if (close) {
+                br.close();
+                System.out.println("buffer closed");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return(str);
+    }
+
+    public static boolean checksum(String msg){
+        int checksum = 0;
+        int start;
+        String check;
+        String substring;
+        String newString;
+        start = msg.indexOf("|10=");
+        substring = msg.substring(start);
+        newString = msg.replace(substring, "");
+        for (int i = 0; i < newString.length(); i++) {
+            checksum += newString.charAt(i);
+        }
+        start = msg.indexOf("|10=")+ 4;
+        check = msg.substring(start);
+        return (checksum % 256 == Integer.parseInt(check));
+    }
+
+    public void SendStringToAll() {
+        if (router.pair.containsValue(i)) {
+            ServerConnection mr = router.MarketList.get(i);
+            ServerConnection br = router.BrokerList.get(i);
+            String msg;
+            if (!idSent){
+                br.SendID(router.brokerid, router.marketid);
+                mr.SendID(router.brokerid, router.marketid);
+                msg = br.readMsg(br.socket, close);
+                if (!msg.equals("quit") && checksum(msg)) {
+//                if(check)
+                    mr.SendString(msg);
+                    msg = mr.readMsg(mr.socket, close);
                     br.SendString(msg);
-                    System.out.println("11");
-                    idSent = true;
                 }
-                else{
-                    System.out.println("12");
-                    msg = in.readLine();
-                    System.out.println("13");
-                    int begin = msg.indexOf("49="+1);
-                    System.out.println("14");
-                    int end = msg.indexOf("49="+6);
-                    System.out.println("15");
+                if (msg.equals("quit")){
+                    mr.SendString(msg);
+                    close = true;
+                    System.out.println("broker ID: "+router.brokerid+"closed");
+                }
+                idSent = true;
+            }
+            else{
+                msg = br.readMsg(br.socket, close);
+                if (!msg.equals("quit") && checksum(msg)) {
+                    int begin = msg.indexOf("49=") + 3;
+                    int end = begin + 6;
                     tid = msg.substring(begin, end);
-                    System.out.println("16");
                     bid = Integer.parseInt(tid);
-                    System.out.println("17");
-                    begin = msg.indexOf("56="+1);
-                    System.out.println("18");
-                    end = msg.indexOf("56="+6);
-                    System.out.println("19");
+                    begin = msg.indexOf("56=") + 3;
+                    end = begin + 6;
                     tid = msg.substring(begin, end);
-                    System.out.println("20");
                     mid = Integer.parseInt(tid);
-                    System.out.println("21");
-                    System.out.println("Broker ID in Server is: "+bid+" Market ID inn server is: "+mid);
-                    if(router.pair.containsKey(bid)){
-                        System.out.println("22");
-                        mr.SendString(msg);//loops through array of connections and sends the string to them all
-                        System.out.println("23");
-                        msg = in.readLine();
-                        System.out.println("24");
+                    System.out.println("Broker ID in Server is: " + bid + " Market ID inn server is: " + mid);
+                    if (router.pair.containsKey(bid)) {
+                        mr.SendString(msg);
+                        msg = mr.readMsg(mr.socket, close);
                         br.SendString(msg);
-                        System.out.println("25");
                     }
                 }
-//                System.out.println("7");
-//
-//                System.out.println("8");
-//                mr.SendString(msg);//loops through array of connections and sends the string to them all
-//                System.out.println("9");
-//                msg = in.readLine();
-//                System.out.println("10");
-//                br.SendString(msg);
-//                System.out.println("11");
+                if (msg.equals("quit")) {
+                    mr.SendString(msg);
+                    System.out.println("Market ID: " + router.marketid + "closed");
+                    close = true;
+                }
             }
         }
     }
 
-    @lombok.SneakyThrows
+    @lombok.SneakyThrows//if lombok is red than make sure you open structure and add lombok to your library
     public void run(){//overwriting the run() function in thread
-        //Reading data from broker
-
-//                String str2 = str.substring(0, 3);
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         os = new OutputStreamWriter(socket.getOutputStream());
         out = new PrintWriter(os);
         System.out.println("do you even enter");
         if (router.marketid > 99999){
             router.pair.put(router.brokerid, router.i);
+            System.out.println(i);
+            while(router.BrokerList.size() <= router.i)
+                router.i--;
+            i = router.i;
             router.i++;
+            idSent = false;
             while (true) {
                 System.out.println("apparently you do");
-                SendStringToAll();
+                if(close){
+                    ServerConnection mr = router.MarketList.get(i);
+                    ServerConnection br = router.BrokerList.get(i);
+                    readMsg(socket,close);
+                    mr.socket.close();
+                    router.MarketList.remove(i);
+                    br.socket.close();
+                    router.BrokerList.remove(i);
+                    os.close();
+                    out.close();
+                    System.out.println("Everything closed");
+                    break;
+                }
+                else{
+                    SendStringToAll();
+                }
             }
         }
-//        in.close();
-//        os.close();
-//        out.close();
-//        socket.close();
     }
 
 }
